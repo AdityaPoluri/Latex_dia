@@ -20,6 +20,7 @@ How to use:
 3) Copy the code in this python file and paste it in the command line of console and hit 'enter'.
 4) Paste the following in commandline of console and hit enter
       dlg=LatexObjectDialog(dia.active_display().diagram, dia.active_display().diagram)
+	If you select the text images (that were created using this plugin), this will only those text objects. Otherwise it will load all the text objects created by this plugin.
 
 Help:
 Add button to add a new text object to the plugin GUI
