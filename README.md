@@ -23,15 +23,20 @@ How to use:
 
 Help:
 Add button to add a new text object to the plugin GUI
+
 Preview button in the text object creates the typed text(as image) in the Dia
+
 Delete button delete the text object from the plugin GUI and the corresponding text from Dia
+
 Caution: You must delete the images created using this plugin using this plugin only. Otherwise it will corrupt the database
 
 
 The code is tested on window 10 with latex compiler Miktex 2.9. But it should run on linux as well.
 
 I am planning to add font size as well.
+
 I would be working on this code. So, the development will be very slow.
+
 I am not a programmer :). Excuse me for the shabby coding.
 
 Hope you enjoy it and find it useful :)
