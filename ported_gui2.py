@@ -17,7 +17,7 @@
 
 import dia, math, string
 import pygtk
-from EpsImagePlugin import split
+#from EpsImagePlugin import split
 #from test.test_cookie import cases
 pygtk.require("2.0")
 import gtk
