@@ -72,7 +72,8 @@ class FrameObject :
     def __init__(self, wino, d, data) :
         self.diagram = d
         self.data = data
-        self.Index=0
+        self.Index=0 #this acts like an identity
+        self.arr_pos=0 #this is the position in the array of loaded objects
         self.wino=wino
         self.entered_val=""
         self.image_loc="./test/1.png"
@@ -135,11 +136,13 @@ class FrameObject :
         self.image1.show()
         
     def del_row(self,*args):
-        Ind=self.Index
-        self.wino.del_routine(Ind)
+        #Ind=self.Index
+        Ind=self.arr_pos
+        self.wino.del_routine(Ind+1)
     
-    def set_ind(self,ind):
+    def set_ind(self,ind,arr_pos):
         self.Index=ind
+        self.arr_pos=arr_pos
         
     def get_ind(self):
         return self.Index
@@ -152,8 +155,9 @@ class LatexObjectDialog :
         self.Miktex_path="C:\\"+""""Program Files"\\"MiKTeX 2.9"\\miktex\\bin\\x64\\"""
         
         self.applist=[]
-        self.no_apps=0
-        self.no_apps_nl=0
+        self.no_apps=0 #number of objects loaded.
+        self.no_apps_nl=0 #number of objects not loaded.
+        self.unused_ind=[]
         
         win = gtk.Window()
         win.connect("delete_event", self.on_delete)
@@ -191,20 +195,17 @@ class LatexObjectDialog :
         print self.dia_obj_filpath
         
         #dlg.obj_list[1].properties['image_file']='C:\\Users\\User\\Pictures\\images\\3.png'
-        
-            
-        
-        
-        
-        
+        self.Seperator="/"
         #project = "./" # specify the project folder
-        project="\\" #if windows
+        if os.name=='nt': #if windows
+            self.Seperator="\\"            
+        project=self.Seperator 
         dia_fil=self.diagram.filename
-        spl=dia_fil.split("\\")
+        spl=dia_fil.split(self.Seperator)
         project=project.join(spl[0:(len(spl)-1)])
-        self.project=project+"\\"
+        self.project=project+self.Seperator
         spl=spl[-1].split(".")
-        self.build_d = spl[0]+"\\"
+        self.build_d = spl[0]+self.Seperator
         if not os.path.exists(os.path.normpath(self.project+self.build_d)):
             os.makedirs(os.path.normpath(self.project+self.build_d))     
         self.db_fil=self.project+self.build_d+"dBfil.csv"
@@ -247,6 +248,9 @@ class LatexObjectDialog :
         self.win.destroy ()
         
     def del_routine(self,Ind):
+        layer = self.data.active_layer
+        layer.remove_object(self.applist[Ind-1].dia_object)
+        self.unused_ind.append(self.applist[Ind-1].get_ind())
         self.applist[Ind-1].button.destroy()
         self.applist[Ind-1].entry.destroy()
         self.applist[Ind-1].buttonP.destroy()
@@ -254,10 +258,10 @@ class LatexObjectDialog :
         self.applist[Ind-1].box2.destroy()
         self.applist[Ind-1].box1.destroy()
         self.applist[Ind-1].frm.destroy()
-        self.applist[Ind-1].set_ind(0)
+        self.applist[Ind-1].set_ind(0,0)
         self.applist[Ind-1].entered_val=""
 #        self.applist[Ind-1].label.destroy()
-        self.no_apps=self.no_apps-1
+        self.no_apps=self.no_apps-1        
         savedB(self.db_fil,self.applist,self.not_loaded)
         print "in delete"+str(len(self.applist))  
         
@@ -276,28 +280,31 @@ class LatexObjectDialog :
             if self.applist[i].get_ind()==0:
                 self.applist[i]=FrameObject(self,self.diagram,self.data)
                 already_set=1
-                self.applist[i].set_ind(i+1)
                 row_num=i
-#                self.applist[i].frame.grid(row=i+1, column=0)
+                #self.applist[i].set_ind(self.no_apps+self.no_apps_nl,row_num)
+                #                self.applist[i].frame.grid(row=i+1, column=0)
                 #row_obj(self.applist[i])
                 break
         if already_set==0:
             self.applist=self.applist+[(FrameObject(self,self.diagram,self.data))]
-            self.applist[-1].set_ind(self.no_apps+self.no_apps_nl)
             row_num=self.no_apps-1
+            #self.applist[-1].set_ind(self.no_apps+self.no_apps_nl,row_num)
+            
         return row_num
 #            self.applist[-1].frame.grid(row=self.no_apps, column=0)
 #        savedB(self.db_fil,self.applist)
 #            row_obj(self.applist[-1])
 
     def loaddB(self,fil_path,dia_obj_filpath,load_all):
+        used_ind=[]
         f=open(fil_path, "r")
         csvreader = csv.reader(f)
         for row in csvreader:
             if row:
+                used_ind.append(int(row[0]))
                 shrt_path=os.path.realpath(row[2])
-                spl=shrt_path.split('\\')
-                s='\\'
+                spl=shrt_path.split(self.Seperator)
+                s=self.Seperator
                 shrt_path=s.join(spl[(len(spl)-2):(len(spl))])
                 set_already=False
                 for ind in range(0,len(dia_obj_filpath)):
@@ -333,11 +340,18 @@ class LatexObjectDialog :
                         self.no_apps_nl=self.no_apps_nl+1
                         self.not_loaded=self.not_loaded+[row]
         f.close()
+        if used_ind:
+            all_ind=range(1,max(used_ind)+1)
+            self.unused_ind=[x for x in all_ind if x not in used_ind]
         savedB(self.db_fil,self.applist,self.not_loaded)
         
     def Add_latex_object(self,*args):
         row_num=self.Add_row()
         def_val="0.0"
+        if not self.unused_ind:
+            self.applist[row_num].set_ind(self.no_apps+self.no_apps_nl,row_num)
+        else:
+            self.applist[row_num].set_ind(self.unused_ind.pop(),row_num)
         self.applist[row_num].entered_val=def_val
         self.applist[row_num].entry.set_text(def_val)
         self.applist[row_num].image_loc=tex_compile(def_val,self.applist[row_num].get_ind(),self.project+self.build_d,self.Miktex_path)
